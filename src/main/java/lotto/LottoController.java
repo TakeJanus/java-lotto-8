@@ -23,7 +23,8 @@ public class LottoController {
 
         long purchaseAmount = (long) purchasedLottos.size() * LottoMachine.LOTTO_PRICE;
 
-        WinningLotto winningLotto = retryGetWinningLotto();
+        // 당첨 번호와 보너스 번호를 순차적으로 입력받고 검증
+        WinningLotto winningLotto = getFinalWinningLotto();
 
         LottoResult lottoResult = calculateResult(purchasedLottos, winningLotto);
         printFinalResult(lottoResult, purchaseAmount);
@@ -36,7 +37,7 @@ public class LottoController {
         while (true) {
             try {
                 long amount = inputView.readPurchaseAmount();
-                return lottoMachine.purchaseLottos(amount); // validate와 발행을 동시에
+                return lottoMachine.purchaseLottos(amount);
             } catch (IllegalArgumentException e) {
                 outputView.printErrorMessage(e.getMessage());
             }
@@ -44,14 +45,42 @@ public class LottoController {
     }
 
     /**
-     * 당첨 번호 및 보너스 번호 입력 단계를 예외 처리와 함께 반복합니다.
+     * 당첨 번호와 보너스 번호 입력을 순차적으로 처리합니다.
      */
-    private WinningLotto retryGetWinningLotto() {
+    private WinningLotto getFinalWinningLotto() {
+        // 1. 당첨 번호가 유효할 때까지 반복
+        Lotto winningLotto = retryGetWinningNumbers();
+
+        // 2. 보너스 번호가 유효할 때까지 반복
+        return retryGetBonusNumber(winningLotto);
+    }
+
+    /**
+     * (신규) 당첨 번호 입력을 받고, Lotto 객체 생성을 통해 유효성 검사를 반복합니다.
+     * @return 유효성이 검증된 Lotto 객체
+     */
+    private Lotto retryGetWinningNumbers() {
         while (true) {
             try {
                 List<Integer> numbers = inputView.readWinningNumbers();
+                return new Lotto(numbers); // 6개, 중복, 1~45 범위 검사
+            } catch (IllegalArgumentException e) {
+                outputView.printErrorMessage(e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * 보너스 번호 입력을 받고, WinningLotto 객체 생성을 통해 유효성 검사를 반복합니다.
+     * @param winningLotto 앞 단계에서 검증된 당첨 번호
+     * @return 유효성이 검증된 WinningLotto 객체
+     */
+    private WinningLotto retryGetBonusNumber(Lotto winningLotto) {
+        while (true) {
+            try {
                 int bonus = inputView.readBonusNumber();
-                return new WinningLotto(numbers, bonus); // 생성자에서 모든 유효성 검사
+                // WinningLotto 생성자가 보너스 번호(범위, 중복)를 검증
+                return new WinningLotto(winningLotto, bonus);
             } catch (IllegalArgumentException e) {
                 outputView.printErrorMessage(e.getMessage());
             }
