@@ -15,12 +15,11 @@ public class Lotto {
         if (numbers.size() != 6) {
             throw new IllegalArgumentException("[ERROR] 로또 번호는 6개여야 합니다.");
         }
-
-        long uniqueCount = numbers.stream()
-                .distinct()
-                .count();
-        if (uniqueCount != numbers.size()) {
+        if (hasDuplicates(numbers)) {
             throw new IllegalArgumentException("[ERROR] 로또 번호는 중복될 수 없습니다.");
+        }
+        if (isOutOfRange(numbers)) {
+            throw new IllegalArgumentException("[ERROR] 로또 번호는 1부터 45 사이의 숫자여야 합니다.");
         }
     }
 
@@ -51,5 +50,23 @@ public class Lotto {
      */
     public List<Integer> getNumbers() {
         return Collections.unmodifiableList(this.numbers); // View(출력)에서 오름차순 정렬을 담당
+    }
+
+    /**
+     * 번호 리스트에 중복이 있는지 검사합니다.
+     */
+    private boolean hasDuplicates(List<Integer> numbers) {
+        long uniqueCount = numbers.stream()
+                .distinct()
+                .count();
+        return uniqueCount != numbers.size();
+    }
+
+    /**
+     * 번호 리스트에 1~45 범위를 벗어난 숫자가 있는지 검사합니다.
+     */
+    private boolean isOutOfRange(List<Integer> numbers) {
+        return numbers.stream()
+                .anyMatch(number -> number < 1 || number > 45);
     }
 }
